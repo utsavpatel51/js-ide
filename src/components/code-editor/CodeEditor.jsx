@@ -136,7 +136,10 @@ const CodeEditor = ({ onOutputChange }) => {
 
   return (
     <div className='relative h-[100vh] w-2/3' ref={editorContainerRef}>
-      <h2 className='text-center'>Code</h2>
+      <div className='flex flex-row items-center justify-center gap-2'>
+        <img src='/vite.svg' alt='JS playgroud logo' className='h-4 w-4' />
+        <h2 className='text-center'>Javascript Playground</h2>
+      </div>
       <Editor
         height='100%'
         language='javascript'
