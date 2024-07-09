@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { transform } from '@babel/standalone';
-import Editor, { loader } from '@monaco-editor/react';
+import Editor, { loader, Monaco } from '@monaco-editor/react';
 import * as eslint from 'eslint-linter-browserify';
 import PropTypes from 'prop-types';
-import { useEffect, useRef } from 'react';
 import { useLocalStorage } from '../../hooks';
+import { editor } from 'monaco-editor';
 
-const vsCodeConfig = {
+const VSCODE_CONFIG: editor.IStandaloneEditorConstructionOptions = {
   minimap: { enabled: false },
   fontLigatures: true,
   fontSize: 16,
@@ -21,16 +21,20 @@ const vsCodeConfig = {
   autoIndent: 'full',
   formatOnType: true,
   formatOnPaste: true,
-  formatOnSave: true,
+  trimAutoWhitespace: true,
 };
 
-const CodeEditor = ({ onOutputChange }) => {
+const CodeEditor = ({
+  onOutputChange,
+}: {
+  onOutputChange: React.Dispatch<React.SetStateAction<string>>;
+}) => {
   const [code, setCode] = useLocalStorage(
     'code',
     'console.log("Hello, World!")'
   );
-  const editorRef = useRef(null);
-  const editorContainerRef = useRef(null);
+  const editorRef: React.MutableRefObject<Monaco | null> = useRef(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const isResizingRef = useRef(false);
 
   useEffect(() => {
@@ -42,7 +46,7 @@ const CodeEditor = ({ onOutputChange }) => {
     });
   }, []);
 
-  const lintCode = (newCode) => {
+  const lintCode = (newCode: string) => {
     const linter = new eslint.Linter();
     const messages = linter.verify(newCode, {
       rules: { 'no-undef': 'error', 'no-unused-vars': 'warn' },
@@ -70,9 +74,9 @@ const CodeEditor = ({ onOutputChange }) => {
     }
   };
 
-  const handleCodeChange = (value) => {
-    setCode(value);
-    lintCode(value);
+  const handleCodeChange = (value?: string) => {
+    setCode(value || '');
+    lintCode(value || '');
   };
 
   const executeCode = () => {
@@ -91,7 +95,7 @@ const CodeEditor = ({ onOutputChange }) => {
 
       onOutputChange(capturedOutput);
     } catch (error) {
-      onOutputChange(error.message);
+      onOutputChange((error as { message: string }).message);
     }
   };
 
@@ -99,21 +103,25 @@ const CodeEditor = ({ onOutputChange }) => {
     executeCode();
   }, [code]);
 
-  const handleEditorWillMount = (monaco) => {
+  const handleEditorWillMount = (monaco: Monaco) => {
     monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
   };
 
-  const handleEditorDidMount = (_, monaco) => {
+  const handleEditorDidMount = (
+    _: editor.IStandaloneCodeEditor,
+    monaco: Monaco
+  ) => {
     editorRef.current = monaco;
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isResizingRef.current) return;
     if (e.clientX < 400) return;
     if (e.clientX > window.innerWidth - 400) return;
 
     let newWidth = e.clientX;
-    editorContainerRef.current.style.width = `${newWidth}px`;
+    if (editorContainerRef.current)
+      editorContainerRef.current.style.width = `${newWidth}px`;
   };
   const handleMouseUp = () => {
     isResizingRef.current = false;
@@ -121,7 +129,7 @@ const CodeEditor = ({ onOutputChange }) => {
     window.removeEventListener('mouseup', handleMouseUp);
   };
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -131,7 +139,8 @@ const CodeEditor = ({ onOutputChange }) => {
   };
 
   const handleReset = () => {
-    editorContainerRef.current.style.width = '50%';
+    if (editorContainerRef.current)
+      editorContainerRef.current.style.width = '50%';
   };
 
   return (
@@ -144,9 +153,9 @@ const CodeEditor = ({ onOutputChange }) => {
         height='100%'
         language='javascript'
         theme='vs-dark'
-        value={code}
+        value={code || ''}
         onChange={handleCodeChange}
-        options={vsCodeConfig}
+        options={VSCODE_CONFIG}
         beforeMount={handleEditorWillMount}
         onMount={handleEditorDidMount}
       />

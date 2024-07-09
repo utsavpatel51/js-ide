@@ -1,7 +1,6 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
-const OutputSection = ({ output }) => {
+const OutputSection = ({ output }: { output: string }) => {
   return (
     <div className='flex-1'>
       <h2 className='text-center'>Console</h2>
@@ -11,10 +10,6 @@ const OutputSection = ({ output }) => {
       <pre className='px-1'>{output}</pre>
     </div>
   );
-};
-
-OutputSection.propTypes = {
-  output: PropTypes.string.isRequired,
 };
 
 export default OutputSection;
